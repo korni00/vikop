@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    url      = env("DATABASE_URL")
+}
+
+
+// Necessary for Next auth
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? // @db.Text
+    access_token      String? // @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? // @db.Text
+    session_state     String?
+    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+
+
+
+
+
+
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    accounts      Account[]
+    sessions      Session[]
+    background    String? @default("https://images.wallpaperscraft.com/image/single/surface_dark_background_50754_1280x720.jpg")
+    createdPosts  Post[]    @relation("PostCreatedBy")
+    createdTags   Tag[]     @relation("TagCreatedBy")
+    createdComments Comment[] @relation("CommentCreatedBy")
+    createdLikes  Like[]    @relation("LikeCreatedBy")
+
+    followers     Follow[]  @relation("Followers")
+    following     Follow[]  @relation("Following")
+}
+
+model Tag {
+    id          String   @id @default(cuid())
+    name        String   @unique
+    background  String   @default("https://wykop.pl/cdn/c0834752/b5c231921c5426cd0ee0e064647b569aef6ee97c99f2146e8ac75141b1a1e612.png")
+    createdBy   User     @relation(name: "TagCreatedBy", fields: [createdById], references: [id], onDelete:  Cascade)
+    createdById String
+    createdAt   DateTime @updatedAt
+    taggedPosts Post[]   @relation("TaggedBy")
+
+}
+
+model Post {
+    id           Int      @id @default(autoincrement())
+    name         String
+    tags         Tag[]    @relation("TaggedBy")
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    createdBy    User      @relation(name: "PostCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+    createdById  String
+    comments     Comment[] @relation("CommentOnPost")
+    postLikes Like[] @relation("LikeOnPost")
+
+    @@index([name])
+}
+
+model Comment {
+    id              Int        @id @default(autoincrement())
+    content         String
+    createdAt       DateTime   @default(now())
+    updatedAt       DateTime   @updatedAt
+    createdBy       User       @relation(name: "CommentCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+    post            Post       @relation(name: "CommentOnPost", fields: [postId], references: [id], onDelete: Cascade)
+    commentLikes    Like[]     @relation("LikeOnComment")
+    createdById     String
+    postId          Int
+}
+
+model Like {
+    id           String    @id @default(cuid())
+    createdAt    DateTime  @default(now())
+    createdBy    User      @relation(name: "LikeCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+    createdById  String
+    post         Post?     @relation(name: "LikeOnPost", fields: [postId], references: [id], onDelete: Cascade)
+    postId       Int?
+
+    comment      Comment?  @relation(name: "LikeOnComment", fields: [commentId], references: [id], onDelete: Cascade)
+    commentId    Int?
+}
+
+model Follow {
+    id            String    @id @default(cuid())
+    createdAt     DateTime  @default(now())
+    follower      User      @relation(name: "Followers", fields: [followerId], references: [id], onDelete: Cascade)
+    followerId    String
+    following     User      @relation(name: "Following", fields: [followingId], references: [id], onDelete: Cascade)
+    followingId   String
+
+    @@unique([followerId, followingId])
+}
