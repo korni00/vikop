@@ -22,21 +22,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    const path = window.location.pathname;
-
-    if (path.includes("/tag/")) {
-      const tagPart = path.split("/tag/")[1];
-      metadata.title = `tag/${tagPart}`;
-    } else if (path.includes("/user/")) {
-      const userPart = path.split("/user/")[1];
-      metadata.title = `user/${userPart}`;
-    } else {
-      metadata.title = "Page Name";
-    }
-
-    document.title = metadata.title;
-  }, []);
   return (
     <html lang="en">
       <body className={`font-sans ${roboto.style.fontFamily}`}>

@@ -14,7 +14,9 @@ import Post from "@/app/post/[...id]/client/Post";
 import CreatePost from "@/app/post/[...id]/client/PostCreate";
 import Layout from "@/components/layout";
 import useSkeleton from "@/hooks/use-skeleton";
-
+import { useSession } from "next-auth/react";
+import { checkAdminStatus } from "./server/is-user-admin";
+import EditBackground from "./client/EditBackground";
 interface LikeWithUser extends Like {
   createdBy: User;
 }
@@ -36,21 +38,26 @@ interface TagWithPosts extends TagType {
 
 const Tag = () => {
   const { name } = useParams();
+  const { data: session } = useSession();
   const [tag, setTag] = useState<TagWithPosts | null>(null);
   const [tagNotFound, setTagNotFound] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState<boolean>(false);
   const skeleton = useSkeleton("tag");
 
-  if (!name) {
-    return null;
-  }
+  const fetchDataAndCheckAdmin = async () => {
+    if (!name) return;
 
-  const fetchData = async () => {
     try {
       const tagWithPosts = await getTag(name);
 
       if (tagWithPosts) {
         setTag(tagWithPosts);
         setTagNotFound(false);
+
+        if (session && tagWithPosts.name) {
+          const isAdmin = await checkAdminStatus(session, tagWithPosts.name);
+          setIsUserAdmin(isAdmin);
+        }
       } else {
         setTag(null);
         setTagNotFound(true);
@@ -63,8 +70,8 @@ const Tag = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [name]);
+    fetchDataAndCheckAdmin();
+  }, [name, session]);
 
   return (
     <Layout
@@ -75,8 +82,14 @@ const Tag = () => {
               style={{
                 backgroundImage: `url(${tag.background})`,
               }}
-              className="h-[180px] w-full bg-cover"
-            />
+              className="flex h-[180px] w-full items-end justify-end gap-2 bg-cover pb-2 pr-2"
+            >
+              {isUserAdmin ? (
+                <div className="flex rounded-sm bg-card/50 px-2 py-1 text-foreground">
+                  <EditBackground tag={tag.name as string} />
+                </div>
+              ) : null}
+            </div>
             <div className="flex w-full  flex-col px-4">
               <div className="flex items-center justify-between py-2">
                 <h1 className="text-4xl font-semibold ">#{tag.name}</h1>
@@ -87,12 +100,12 @@ const Tag = () => {
 
               <CreatePost
                 postPlaceholder={`#${tag.name}`}
-                onPostCreate={() => fetchData()}
+                onPostCreate={() => fetchDataAndCheckAdmin()}
               />
               <span className="flex w-full flex-col">
                 {tag.taggedPosts.map((post) => (
                   <Post
-                    onCommentCreate={() => fetchData()}
+                    onCommentCreate={() => fetchDataAndCheckAdmin()}
                     key={post.id}
                     post={post}
                   />

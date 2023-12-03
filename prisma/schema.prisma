@@ -68,9 +68,9 @@ model User {
     background    String? @default("https://images.wallpaperscraft.com/image/single/surface_dark_background_50754_1280x720.jpg")
     createdPosts  Post[]    @relation("PostCreatedBy")
     createdTags   Tag[]     @relation("TagCreatedBy")
+    adminOfTags Tag[] @relation("TagAdmin")
     createdComments Comment[] @relation("CommentCreatedBy")
     createdLikes  Like[]    @relation("LikeCreatedBy")
-
     followers     Follow[]  @relation("Followers")
     following     Follow[]  @relation("Following")
 }
@@ -83,6 +83,7 @@ model Tag {
     createdById String
     createdAt   DateTime @updatedAt
     taggedPosts Post[]   @relation("TaggedBy")
+    administrator User @relation("TagAdmin", fields: [createdById], references: [id])
 
 }
 

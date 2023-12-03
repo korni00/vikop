@@ -45,6 +45,7 @@ export const createPost = async ({
           data: {
             name: tagName,
             createdBy: { connect: { id: session.user.id } },
+            administrator: { connect: { id: session.user.id } },
           },
         });
 
@@ -68,6 +69,7 @@ export const createPost = async ({
             create: {
               name: tag.name,
               createdBy: { connect: { id: session.user.id } },
+              administrator: { connect: { id: session.user.id } },
             },
           })),
         },

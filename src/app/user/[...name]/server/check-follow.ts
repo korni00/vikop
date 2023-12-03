@@ -16,8 +16,6 @@ export const checkFollow = async ({ follower, following }: FollowAction) => {
       },
     });
 
-    console.log("Existing Follow:", existingFollow);
-
     return !!existingFollow;
   } catch (err) {
     console.error(err);

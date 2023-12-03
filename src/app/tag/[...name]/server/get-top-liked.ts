@@ -3,19 +3,15 @@ import { db } from "@/server/db";
 
 export const getTopLikedTags = async (): Promise<string[]> => {
   try {
-    const allTags = await db.tag.findMany({
+    const allTagsWithLikes = await db.tag.findMany({
       select: {
         name: true,
-        taggedLikes: {
-          select: {
-            id: true,
-          },
-        },
+        taggedPosts: true,
       },
     });
 
-    const topTags = allTags
-      .sort((a, b) => b.taggedLikes.length - a.taggedLikes.length)
+    const topTags = allTagsWithLikes
+      .sort((a, b) => b.taggedPosts.length - a.taggedPosts.length)
       .slice(0, 10)
       .map((tag) => tag.name);
 
